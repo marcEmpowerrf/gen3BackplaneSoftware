@@ -228,19 +228,15 @@ void write_mmd_device(unsigned short port, unsigned char device,
     tmp = write_switch_reg16 ( portmmdsetup, mmstu.reg16);
 
      // 
-       
-
     tmp = write_switch_reg16 ( portmmdsetup, regoffset);
 
-      //
-      data_s.op= 0x40;
+    //
+    data_s.op= 0x40;
       
- 
     tmp = write_switch_reg16 ( portmmdsetup, mmstu.reg16);
 
     tmp = write_switch_reg16(portmmddata, value);
 
-      //
 }   
 
 
@@ -425,7 +421,7 @@ void disableAuto( int port,  bool isGig)
        reg16 = 0x0140;
    }
    else {
-            reg16 = 0x2100;
+          reg16 = 0x2100;
    }
    write_switch_reg16 ( phyCR,reg16);
    
@@ -463,4 +459,12 @@ void getPortStatus(int port)
      if (reg8 == 1 )     printf("100Mb/s" );
      if (reg8 == 2 )     printf("1000Mb/s" );
       printf("\n" );
+}
+
+void disable1000BaseT(unsigned short  port)
+{
+    unsigned short regAddr = (unsigned short) (0x0112 |  (port << 12));
+    unsigned short reg16 = read_switch_reg16 ( regAddr );
+    reg16 &=  ~DISABLE_1000BASE_T;
+    write_switch_reg16 ( regAddr , reg16);
 }

@@ -25,6 +25,8 @@ extern "C" {
 #define MMD_SETUP    0x011A   // and 0x011B
 #define MMD_DATA     0x011C
 
+#define DISABLE_1000BASE_T ( ( unsigned short) 0x0300 )
+    
 #define SWAP_16
 
 typedef struct __attribute__((__packed__)) spiMessage {
@@ -75,6 +77,7 @@ void configclock( bool enable, bool clk25M) ;
 void disableAuto( int port,  bool isGig) ;
 void regdump( ) ;
 void getPortStatus(int port);
+void disable1000BaseT(unsigned short port);
 
 typedef struct  {
 unsigned char device;

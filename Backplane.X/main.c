@@ -56,9 +56,46 @@
 //#define RESET_SWITCH_PORT 
 //#define Force_100
 //#define Force_1GB
-//#define TOGGLE_LED
+#define TOGGLE_LED
+#define TOGGLE_LED_COUNT 5
 
 #define DISABLE_1000BASE_T ( ( unsigned short) 0x0300 )
+
+void setLedGreen( bool on)
+{
+    if (on)
+    {
+      GREEN_LED_SetLow();
+    }
+    else
+    {
+     GREEN_LED_SetHigh();   
+    }
+}
+
+void setLedRed( bool on)
+{
+    if (on)
+    {
+      RED_LED_SetLow();
+    }
+    else
+    {
+     RED_LED_SetHigh();   
+    }
+}
+
+void setLedBlue( bool on)
+{
+    if (on)
+    {
+      BLUE_LED_SetLow();
+    }
+    else
+    {
+     BLUE_LED_SetHigh();   
+    }
+}
 
 void main(void)
 {
@@ -67,12 +104,12 @@ void main(void)
     SPI_MODE bp_Spi_mode;
     unsigned char  spiReg ;
     bool link = false;
-    int port, nport;
+    unsigned short port;
     bool resetAll = false, isLink =false;
     unsigned short reg16, regAddr;
 
 #ifdef TOGGLE_LED
-    int toggleLedcnt = 10;
+    int toggleLedcnt = TOGGLE_LED_COUNT;
     bool solidGreen = false;
 #endif
     
@@ -81,7 +118,6 @@ void main(void)
     // Initialize the device
     SYSTEM_Initialize();
     SPI1_CHIP_SEL_SetHigh();
-    
     SPI1_Open(SPI1_DEFAULT);
 
     // If using interrupts in PIC18 High/Low Priority Mode you need to enable the Global High and Low Interrupts
@@ -96,14 +132,16 @@ void main(void)
 
 
     //RESET_DEV_SetLow() ;  L:ow by default
+   setLedRed(true);
     for (i=0; i<9; i++)
     {
       __delay_ms(1000);      
     }
     RESET_DEV_SetHigh() ; 
-
-    __delay_ms(1000);  // Let the switch configure itself.
-    GREEN_LED_SetHigh() ;
+    
+    setLedRed(false);  
+    // Let the switch configure itself.
+    
     
 #if 0   
     spiReg = read_switch_reg ( 0x010D );
@@ -124,40 +162,74 @@ void main(void)
     }
   #endif
 
-       regAddr = 0x1112;
-        reg16 = read_switch_reg16 ( regAddr );
-        reg16 &=  ~DISABLE_1000BASE_T;
-       write_switch_reg16 ( regAddr , reg16);
-        regAddr = 0x2112;
-        reg16 = read_switch_reg16 ( regAddr );
+    // Disable 1000BaseT AutoNeg
+    for (port=1; port< 5; port++)
+    {
+        disable1000BaseT(port);
+    }
+    
+    __delay_ms(100);      
+    reg16 = read_switch_reg16 ( 0x1112 );
+    
+    if ( (reg16 != 0xFFFF)  &&(reg16 & DISABLE_1000BASE_T)  ) 
+    {
+       reg16 &= ~DISABLE_1000BASE_T;
+       write_switch_reg16 ( 0x1112,  reg16);
+    }
+     __delay_ms(100);      
+     reg16 = read_switch_reg16 ( 0x2112 );
+    if ( (reg16 != 0xFFFF)  &&(reg16 & DISABLE_1000BASE_T)  ) 
+    {
+      reg16 &= ~DISABLE_1000BASE_T;
+       write_switch_reg16 ( 0x2112,  reg16);
+    }
+      __delay_ms(100);      
+     reg16 = read_switch_reg16 ( 0x3112 );
+    if ( (reg16 != 0xFFFF)  &&(reg16 & DISABLE_1000BASE_T)  ) 
+    {
         reg16 &= ~DISABLE_1000BASE_T;
-       write_switch_reg16 ( regAddr , reg16);
-       
-        regAddr = 0x3112;
-        reg16 = read_switch_reg16 ( regAddr );
-        reg16 &=  ~DISABLE_1000BASE_T;
-       write_switch_reg16 ( regAddr , reg16);
-       
-       regAddr = 0x4112;
-        reg16 = read_switch_reg16 ( regAddr );
-        reg16 &= ~DISABLE_1000BASE_T;
-       write_switch_reg16 ( regAddr , reg16);
+       write_switch_reg16 ( 0x3112,  reg16);
+    }
+      __delay_ms(100);      
+      reg16 = read_switch_reg16 ( 0x4112 );
+    if ( (reg16 != 0xFFFF)  &&(reg16 & DISABLE_1000BASE_T)  ) 
+    {
+       reg16 &= ~DISABLE_1000BASE_T;
+       write_switch_reg16 ( 0x4112,  reg16);;    
+    }
+    
        
     while (1)
     {
-        __delay_ms(1000);  // Let the switch configure itself.
+        
  #ifdef TOGGLE_LED
       if (!solidGreen)
       {
-          if (toggleLedcnt-- != 0 )
+         if (toggleLedcnt-- != 0 )
          {
-            GREEN_LED_Toggle();  
+             setLedGreen(true);  
+             __delay_ms(1000);  
+              setLedGreen(false);
+              __delay_ms(1000);  
          } 
          else
          {
-             GREEN_LED_SetHigh();
-             solidGreen = true;
+            setLedGreen(true);
+            solidGreen = true;
          }
+      }
+      else {
+           __delay_ms(1000);  // Let the switch configure itself.
+            setLedGreen(true);
+           
+            reg16 = read_switch_reg16 ( 0x1112 );
+            if ( (reg16 != 0xFFFF)  &&(reg16 & DISABLE_1000BASE_T)  ) 
+            {
+                 reg16 &= ~DISABLE_1000BASE_T;
+                write_switch_reg16 ( 0x1112,  reg16);
+            }
+            
+            
       }
 #endif
     }
